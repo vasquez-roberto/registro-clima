@@ -5,8 +5,8 @@ on:
     - cron: '0 */3 * * *'
   workflow_dispatch:
 
-# Otorga permisos explicitos de escritura al workflow
-permissions: write-all
+permissions:
+  contents: write
 
 jobs:
   build-and-commit:
@@ -16,7 +16,7 @@ jobs:
     - name: Clonar Repositorio
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Evita errores 128 al hacer commit/push
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Configurar Python
       uses: actions/setup-python@v5
@@ -31,12 +31,8 @@ jobs:
     - name: Ejecutar Extracción
       run: python main.py
 
-    - name: Guardar Cambios en GitHub
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add data/calidad_aire.csv
-        git commit -m "Automated update: Registros de calidad del aire Monterrey" || echo "No hay cambios para guardar"
-        git push origin HEAD:${{ github.ref_name }}
+    - name: Guardar Cambios Automáticamente
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Automated update: Registros de calidad del aire Monterrey"
+        file_pattern: 'data/calidad_aire.csv'
