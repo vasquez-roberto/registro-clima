@@ -2,9 +2,11 @@ name: Actualizar Calidad del Aire Monterrey
 
 on:
   schedule:
-    # Se ejecuta cada 3 horas (Minuto 0, cada 3 horas)
     - cron: '0 */3 * * *'
-  workflow_dispatch: # Permite ejecutar el proceso manualmente desde la web de GitHub
+  workflow_dispatch:
+
+# Otorga permisos explicitos de escritura al workflow
+permissions: write-all
 
 jobs:
   build-and-commit:
@@ -13,6 +15,8 @@ jobs:
     steps:
     - name: Clonar Repositorio
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Evita errores 128 al hacer commit/push
 
     - name: Configurar Python
       uses: actions/setup-python@v5
@@ -28,9 +32,11 @@ jobs:
       run: python main.py
 
     - name: Guardar Cambios en GitHub
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add data/calidad_aire.csv
-        git commit -m "Automated update: Registros de calidad del aire Monterrey" || exit 0
-        git push
+        git commit -m "Automated update: Registros de calidad del aire Monterrey" || echo "No hay cambios para guardar"
+        git push origin HEAD:${{ github.ref_name }}
