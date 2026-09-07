@@ -2,72 +2,59 @@ import os
 from datetime import datetime
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
+
+# Puedes guardar tu API key directamente o usar GitHub Secrets
+API_KEY = "	f9bc714e-3cb9-4aaa-86cd-5e9bed306683"
+CIUDAD = "Monterrey"
+ESTADO = "Nuevo Leon"
+PAIS = "Mexico"
 
 
-def extraer_datos_iqair():
-    url = "https://www.iqair.com/mx/air-quality/mexico/nuevo-leon/monterrey"
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
-    }
+def obtener_datos_api():
+    url = f"http://api.airvisual.com/v2/city?city={CIUDAD}&state={ESTADO}&country={PAIS}&key={API_KEY}"
 
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        print(f"Error al acceder a la página: {response.status_code}")
+    try:
+        response = requests.get(url, timeout=15)
+        datos = response.json()
+
+        if datos.get("status") == "success":
+            current = datos["data"]["current"]
+            pollution = current["pollution"]
+
+            ahora = datetime.now()
+            return {
+                "Fecha": ahora.strftime("%Y-%m-%d"),
+                "Hora": ahora.strftime("%H:%M:%S"),
+                "Ciudad": CIUDAD,
+                "AQI_US": pollution["aqius"],
+                "Contaminante_Principal": pollution["mainus"],
+                "Temperatura_C": current["weather"]["tp"],
+                "Humedad_%": current["weather"]["hu"],
+            }
+        else:
+            print(f"Error en la API: {datos.get('data', {}).get('message')}")
+            return None
+
+    except Exception as e:
+        print(f"Error en la consulta HTTP: {e}")
         return None
-
-    soup = BeautifulSoup(response.content, "html.parser")
-
-    # Extraer AQI principal (AQI US)
-    aqi_elem = soup.find("span", class_="aqi-value__value")
-    aqi = aqi_elem.text.strip() if aqi_elem else "N/A"
-
-    # Extraer Nivel de Contaminación (e.g., Moderado, Dañino)
-    status_elem = soup.find("span", class_="aqi-status__text")
-    estado = status_elem.text.strip() if status_elem else "N/A"
-
-    # Extraer Contaminante Principal
-    pollutant_elem = soup.find("p", class_="pollutant-item__name")
-    contaminante_principal = (
-        pollutant_elem.text.strip() if pollutant_elem else "N/A"
-    )
-
-    # Fecha y Hora actual
-    ahora = datetime.now()
-    fecha = ahora.strftime("%Y-%m-%d")
-    hora = ahora.strftime("%H:%M:%S")
-
-    return {
-        "Fecha": fecha,
-        "Hora": hora,
-        "Ciudad": "Monterrey",
-        "AQI_US": aqi,
-        "Estado": estado,
-        "Contaminante_Principal": contaminante_principal,
-    }
 
 
 def guardar_en_csv(nuevo_registro):
     filepath = "data/calidad_aire.csv"
-
-    # Crear la carpeta data/ si no existe
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    os.makedirs("data", exist_ok=True)
 
     df_nuevo = pd.DataFrame([nuevo_registro])
 
-    # Si el archivo ya existe, añadir datos sin escribir el encabezado
     if os.path.exists(filepath):
         df_nuevo.to_csv(filepath, mode="a", header=False, index=False)
     else:
         df_nuevo.to_csv(filepath, mode="w", header=True, index=False)
 
-    print("Registro agregado exitosamente.")
+    print(f"Registro exitoso en {filepath}")
 
 
 if __name__ == "__main__":
-    datos = extraer_datos_iqair()
+    datos = obtener_datos_api()
     if datos:
         guardar_en_csv(datos)
