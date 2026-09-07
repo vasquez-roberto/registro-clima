@@ -15,8 +15,6 @@ jobs:
     steps:
     - name: Clonar Repositorio
       uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Configurar Python
       uses: actions/setup-python@v5
@@ -29,10 +27,12 @@ jobs:
         pip install -r requirements.txt
 
     - name: Ejecutar Extracción
+      env:
+        IQAIR_API_KEY: ${{ secrets.IQAIR_API_KEY }}
       run: python main.py
 
     - name: Guardar Cambios Automáticamente
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "Automated update: Registros de calidad del aire Monterrey"
+        commit_message: "Automated update: Registros de calidad del aire Monterrey (API)"
         file_pattern: 'data/calidad_aire.csv'
