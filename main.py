@@ -3,14 +3,18 @@ from datetime import datetime
 import pandas as pd
 import requests
 
-# Puedes guardar tu API key directamente o usar GitHub Secrets
-API_KEY = "	f9bc714e-3cb9-4aaa-86cd-5e9bed306683"
+# Lee la API Key cargada desde GitHub Secrets o entorno local
+API_KEY = os.getenv("f9bc714e-3cb9-4aaa-86cd-5e9bed306683")
 CIUDAD = "Monterrey"
 ESTADO = "Nuevo Leon"
 PAIS = "Mexico"
 
 
 def obtener_datos_api():
+    if not API_KEY or API_KEY == "TU_API_KEY_LOCAL_SI_PROBAS_LOCAL":
+        print("Error: No se ha configurado la IQAIR_API_KEY.")
+        return None
+
     url = f"http://api.airvisual.com/v2/city?city={CIUDAD}&state={ESTADO}&country={PAIS}&key={API_KEY}"
 
     try:
@@ -51,7 +55,7 @@ def guardar_en_csv(nuevo_registro):
     else:
         df_nuevo.to_csv(filepath, mode="w", header=True, index=False)
 
-    print(f"Registro exitoso en {filepath}")
+    print(f"Registro guardado exitosamente en {filepath}")
 
 
 if __name__ == "__main__":
