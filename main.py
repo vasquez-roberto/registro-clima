@@ -1,17 +1,20 @@
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 import pandas as pd
 import requests
 
-# Lee la API Key cargada desde GitHub Secrets o entorno local
-API_KEY = os.getenv("f9bc714e-3cb9-4aaa-86cd-5e9bed306683")
+# Carga las variables del archivo .env si existe (entorno local)
+load_dotenv()
+
+API_KEY = os.getenv("IQAIR_API_KEY")
 CIUDAD = "Monterrey"
 ESTADO = "Nuevo Leon"
 PAIS = "Mexico"
 
 
 def obtener_datos_api():
-    if not API_KEY or API_KEY == "TU_API_KEY_LOCAL_SI_PROBAS_LOCAL":
+    if not API_KEY:
         print("Error: No se ha configurado la IQAIR_API_KEY.")
         return None
 
